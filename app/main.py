@@ -5,6 +5,7 @@ from models.TitleModel import FancyModel
 from models.TitleService import TitleService
 from models.Transaction import Transaction
 from models.TransactionHistory import TransactionHistory
+from datetime import datetime
 
 # --- Главная функция ---
 if __name__ == "__main__":
