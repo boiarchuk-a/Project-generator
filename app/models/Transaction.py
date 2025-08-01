@@ -4,7 +4,7 @@ from typing import Optional
 from datetime import datetime
 
 if TYPE_CHECKING:
-    from models.User import User
+    from app.models.User import User
 
 # --- История транзакций ---
 class Transaction(SQLModel, table=True):

@@ -1,11 +1,12 @@
 pip == 25.1.1
 bcrypt == 4.3.0
-sqlalchemy
-asyncpg
-psycopg
-psycopg-binary
-alembic
-pydantic
-pydantic-settings
-sqlmodel
-starlette
+sqlalchemy == 2.0.17
+asyncpg ==0.30.0
+psycopg == 3.2.9
+psycopg-binary == 3.2.9
+alembic == 1.16.4
+pydantic == 2.10.6
+pydantic-settings == 2.10.1
+sqlmodel == 0.0.24
+starlette == 0.27.0
+fastapi == 0.105.0

@@ -1,5 +1,5 @@
 from typing import List
-from models.User import User
+from app.models.User import User
 
 # --- Админ ---
 class Admin(User):
