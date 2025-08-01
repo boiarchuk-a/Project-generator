@@ -2,23 +2,34 @@ from dataclasses import dataclass, field
 from typing import List
 from models.Balance import Balance
 from models.Prediction import Prediction
+from sqlmodel import SQLModel, Field
+from typing import Optional
+from datetime import datetime
 import re
 import bcrypt
 
-# --- Пользователь ---
-@dataclass
-class User:
-    id: int
+if TYPE_CHECKING:
+    from models.Transaction import Transaction
 
-    predictions: List[Prediction] = field(default_factory=list)
-    balance: Balance = field(default_factory=Balance)
+# --- Пользователь ---
+class User(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    username: str
+    hashed_password: str
+    role: str = "user"
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
 
     # приватные поля
-    _email: str = field(init=False, repr=False)
-    _password: str = field(init=False, repr=False)
+    _email: Optional[str] = None
+    _password: Optional[str] = None
+    predictions: List[Prediction] = []
+    balance: Balance = Balance()
 
-    def __init__(self, id: int, email: str, password: str):
+    def __init__(self, id: int, email: str, password: str, username: str, role: str = 'user'):
         self.id = id
+        self.username = username
+        self.role = role
         self._email = email
         self._password = password
         self.predictions = []
