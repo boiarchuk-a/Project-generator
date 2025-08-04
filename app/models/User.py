@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List
-from app.models.Balance import Balance
-from app.models.Prediction import Prediction
+from models.Balance import Balance
+from models.Prediction import Prediction
 from sqlmodel import SQLModel, Field
 from typing import Optional
 from datetime import datetime
