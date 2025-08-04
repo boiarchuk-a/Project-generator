@@ -1,6 +1,6 @@
 from app.models.User import User
-from app.models.Prediction import Prediction
-from app.models.TitleModel import TitleModel
+from models.Prediction import Prediction
+from models.TitleModel import TitleModel
 
 # --- Сервис генерации заголовков ---
 class TitleService:

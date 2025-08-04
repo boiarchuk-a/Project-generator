@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List
 from typing import Optional
-from app.models.Transaction import Transaction
+from models.Transaction import Transaction
 
 # --- История транзакций ---
 @dataclass
