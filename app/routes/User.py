@@ -73,19 +73,12 @@ async def signin(data: User, session=Depends(get_session)) -> Dict[str, str]:
 
 
 @user_route.get(
-    "/get_all_users",
+    "/users",
     response_model=List[User],
     summary="Get all users",
     response_description="List of all users"
 )
 async def get_all_users(session=Depends(get_session)) -> List[User]:
-    """
-    Get list of all users.
-    Args:
-        session: Database session
-    Returns:
-        List[UserResponse]: List of users
-    """
     try:
         users = UserService.get_all_users(session)
         logger.info(f"Retrieved {len(users)} users")
