@@ -17,11 +17,9 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-# те же переменные, что и в rm.py
 RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@rabbitmq:5672/")
 QUEUE_NAME   = os.getenv("QUEUE_NAME", "predictions")
 
-# такое же подключение: URLParameters
 connection_params = pika.URLParameters(RABBITMQ_URL)
 
 connection = pika.BlockingConnection(connection_params)
@@ -29,7 +27,6 @@ channel = connection.channel()
 queue_name = 'ml_task_queue'
 channel.queue_declare(queue=queue_name)
 
-# инициализируем модель один раз
 _model = FancyModel()
 _service = TitleService(_model)
 
@@ -63,26 +60,24 @@ def process_task(user_id: int, text: str) -> str:
     Выполняет предикт и пишет результат в БД.
     Возвращает сгенерированный заголовок.
     """
-    # предикт (адаптируй сигнатуру при необходимости)
     pred_obj = _service.generate(text)
     generated_title = getattr(pred_obj, "generated_title", str(pred_obj))
 
     # запись в БД
     with Session(engine) as session:
-        # Prediction (если в твоей модели есть user_id — добавь его полем)
+
         prediction = Prediction(
             input_text=text,
             generated_title=generated_title,
-            timestamp=datetime.utcnow()  # если поле есть
+            timestamp=datetime.utcnow()
         )
         session.add(prediction)
 
-        # Transaction — журналируем работу воркера
+        # Transaction
         tx = Transaction(
             user_id=user_id,
-            amount=0.0,
+            amount= 10.0,
             result=f"PREDICT:{generated_title}",
-            # timestamp в твоей модели может заполняться автоматически
         )
         session.add(tx)
 
@@ -96,21 +91,20 @@ def callback(ch, method, properties, body: bytes):
         payload = body.decode("utf-8")
         logger.info(f"Получено сообщение: {payload}")
 
-        user_id, text = parse_payload(payload)          # валидация + парсинг
+        user_id, text = parse_payload(payload)
         title = process_task(user_id, text)             # предикт + запись в БД
         logger.info(f"Готово: user_id={user_id}, title='{title}'")
 
-        ch.basic_ack(delivery_tag=method.delivery_tag)  # подтверждение
+        ch.basic_ack(delivery_tag=method.delivery_tag)
     except Exception as e:
         logger.exception(f"Ошибка при обработке: {e}")
-        # чтобы не зациклить: в DLQ можно отправлять, здесь отклоняем без повторной постановки
         ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
 
-# Подписка на очередь и установка обработчика сообщений
+
 channel.basic_consume(
     queue=queue_name,
     on_message_callback=callback,
-    auto_ack=False  # Автоматическое подтверждение обработки сообщений
+    auto_ack=False
 )
 
 logger.info('Waiting for messages. To exit, press Ctrl+C')
