@@ -38,6 +38,21 @@ services:
       - db_data:/var/lib/postgresql/data
     restart: unless-stopped
 
+  ml_worker:
+    build: ./ml_worker/
+    image: event-planner-ml-worker:latest
+    container_name: event-planner-ml-worker
+    restart: unless-stopped
+    env_file:
+      - ./ml_worker/.env
+    volumes:
+      - ./ml_worker:/app
+    depends_on:
+      - db
+      - rabbitmq
+    networks:
+      - event-planner-network
+
 volumes:
   rabbitmq_data:
     driver: local
