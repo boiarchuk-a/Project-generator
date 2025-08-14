@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Вход{% endblock %}
+{% block content %}
+<div class="auth">
+  <div class="card card--narrow">
+    <h1 class="h2 center">Вход</h1>
+
+    {% if errors %}
+      <div class="alert alert--danger">
+        {% for e in errors %}<div>{{ e }}</div>{% endfor %}
+      </div>
+    {% endif %}
+    {% if msg %}<div class="alert alert--success">{{ msg }}</div>{% endif %}
+
+    <!-- ВАЖНО: твой LoginForm читает поля username/password и POST на /login -->
+    <form action="/login" method="post" class="form">
+      <label class="label">Email</label>
+      <input type="email" name="username" class="input" value="{{ username or '' }}" required />
+
+      <label class="label">Пароль</label>
+      <input type="password" name="password" class="input" required />
+
+      <button class="btn btn--primary" type="submit">Войти</button>
+    </form>
+
+    <div class="center muted" style="margin-top:10px">
+      Нет аккаунта? Обратитесь к администратору.
+    </div>
+  </div>
+</div>
+{% endblock %}

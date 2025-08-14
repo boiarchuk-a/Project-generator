@@ -1,0 +1,130 @@
+/* === Общие стили === */
+body {
+  margin: 0;
+  font-family: "Segoe UI", Roboto, sans-serif;
+  background: #f4f6fb;
+  color: #222;
+  line-height: 1.5;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* === Шапка === */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+}
+
+.brand {
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: #2a2d43;
+}
+
+.brand .accent {
+  color: #4a6cf7;
+}
+
+/* === Навигация === */
+.nav {
+  display: flex;
+  gap: 1rem;
+}
+
+.nav__link {
+  padding: 0.5rem 0.8rem;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.nav__link:hover {
+  background: rgba(74, 108, 247, 0.1);
+}
+
+/* === Кнопки === */
+.btn {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn--primary {
+  background: #4a6cf7;
+  color: white;
+  border: none;
+}
+
+.btn--primary:hover {
+  background: #3a57d1;
+}
+
+.btn--ghost {
+  border: 1px solid #4a6cf7;
+  color: #4a6cf7;
+  background: transparent;
+}
+
+.btn--danger {
+  background: #e74c3c;
+  color: white;
+  border: none;
+}
+
+.btn--danger:hover {
+  background: #c0392b;
+}
+
+/* === Карточки === */
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.2rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.card--sub {
+  background: #f9fafe;
+}
+
+/* === Заголовки === */
+.h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+.h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+.h3 { font-size: 1.2rem; margin-bottom: 0.3rem; }
+
+/* === Формы === */
+.label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-weight: 600;
+}
+
+.input, textarea {
+  width: 100%;
+  padding: 0.6rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.input:focus, textarea:focus {
+  border-color: #4a6cf7;
+  outline: none;
+}
+
+/* === Footer === */
+.footer {
+  margin-top: 2rem;
+  padding: 1rem 0;
+  border-top: 1px solid #eee;
+  text-align: center;
+  color: #777;
+}
