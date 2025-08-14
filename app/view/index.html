@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Главная — Text2Title{% endblock %}
+{% block content %}
+
+<section class="grid grid--2">
+  <div class="card">
+    <h1 class="h1">Text<span class="accent">2</span>Title</h1>
+    <p class="muted">Онлайн-модель для генерации заголовков из абзацев текста.</p>
+
+    {% if error %}<div class="alert alert--danger">{{ error }}</div>{% endif %}
+    {% if result %}
+      <div class="card card--sub">
+        <h3 class="h3">Результат</h3>
+        <pre class="mono" style="white-space:pre-wrap">{{ result }}</pre>
+      </div>
+    {% endif %}
+
+    <form class="form" action="/prediction" method="post">
+      <label class="label">Текст для заголовка</label>
+      <textarea name="input_text" rows="8" class="input" placeholder="Вставьте абзац здесь..." required></textarea>
+      <button class="btn btn--primary" type="submit">Сгенерировать заголовок</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2 class="h2">Справка</h2>
+    <ul class="bullets">
+      <li>API истории: <code>/prediction/history/{user_id}</code></li>
+      <li>API предсказания: <code>POST /prediction</code> c <code>{"input_text": "..."}</code></li>
+      <li>Очередь задач: <code>POST /ml/send_task?message=...</code></li>
+    </ul>
+  </div>
+</section>
+
+{% endblock %}
