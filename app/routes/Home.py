@@ -1,9 +1,9 @@
 from typing import Dict
 from fastapi import APIRouter, HTTPException
 
-home_route = APIRouter()
+home_router = APIRouter()
 
-@home_route.get(
+@home_router.get(
     "/",
     response_model=Dict[str, str],
     summary="Root endpoint",
@@ -20,7 +20,7 @@ async def index() -> str:
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@home_route.get(
+@home_router.get(
     "/health",
     response_model=Dict[str, str],
     summary="Health check endpoint",

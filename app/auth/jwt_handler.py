@@ -2,7 +2,7 @@ import time
 from datetime import datetime
 from fastapi import HTTPException, status
 from jose import jwt, JWTError
-from database.database import get_settings
+from app.database.database import get_settings
 
 settings = get_settings()
 SECRET_KEY = settings.SECRET_KEY

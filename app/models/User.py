@@ -1,9 +1,9 @@
 from dataclasses import dataclass, field
 from typing import List
-from models.Balance import Balance
-from models.Prediction import Prediction
+from Balance import Balance
+from Prediction import Prediction
 from sqlmodel import SQLModel, Field
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 import re
 import bcrypt
@@ -24,7 +24,7 @@ class User(SQLModel, table=True):
     _email: Optional[str] = None
     _password: Optional[str] = None
     predictions: List[Prediction] = []
-    balance: Balance = Balance()
+    balance: Optional[Balance] = Field(default=None, exclude=True)
 
     def __init__(self, id: int, email: str, password: str, username: str, role: str = 'user'):
         self.id = id

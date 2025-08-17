@@ -4,7 +4,9 @@ from datetime import datetime
 # --- Предсказание заголовка ---
 @dataclass
 class Prediction:
+    id: int
     input_text: str
+    user_id: int
     generated_title: str
     timestamp: datetime = field(default_factory=datetime.now)
 

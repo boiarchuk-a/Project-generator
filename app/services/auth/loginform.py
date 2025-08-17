@@ -4,7 +4,7 @@ from typing import Optional, List
 class LoginForm:
     def __init__(self, request: Request):
         self.request: Request = request
-        self.errors: List = []
+        self.errors: List[str] = []
         self.username: Optional[str] = None
         self.password: Optional[str] = None
 
@@ -14,10 +14,16 @@ class LoginForm:
         self.password = form.get("password")
 
     async def is_valid(self):
-        if not self.username or not (self.username.__contains__("@")):
+        # Проверка логина (почта)
+        if not self.username:
             self.errors.append("Email is required")
-        if not self.password or not len(self.password) >= 1:
-            self.errors.append("A valid password is required")
-        if not self.errors:
-            return True
-        return False
+        elif "@" not in self.username or "." not in self.username:
+            self.errors.append("Invalid email format")
+
+        # Проверка пароля
+        if not self.password:
+            self.errors.append("Password is required")
+        elif len(self.password) < 6:
+            self.errors.append("Password must be at least 6 characters")
+
+        return not self.errors

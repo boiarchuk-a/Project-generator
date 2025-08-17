@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}История транзакций{% endblock %}
+{% block content %}
+<h1 class="h2">История транзакций</h1>
+
+{% if not items %}
+  <p class="muted">Записей пока нет.</p>
+{% else %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+      <tr>
+        <th>Дата</th>
+        <th>Тип</th>
+        <th>Сумма</th>
+        <th>Комментарий</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% for t in items %}
+        <tr>
+          <td>{{ t.created_at or t.timestamp or "-" }}</td>
+          <td>{{ t.type or t.kind or "-" }}</td>
+          <td>
+            {% if (t.type or t.kind) in ["withdraw","debit"] %}-{% endif %}
+            {{ t.amount }}
+          </td>
+          <td class="truncate">{{ t.note or t.comment or "-" }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% set pages = (total // per_page) + (1 if total % per_page else 0) %}
+  {% if pages > 1 %}
+    <nav class="pager">
+      {% if page > 1 %}
+        <a class="btn" href="?user_id={{ user_id }}&page={{ page-1 }}&per_page={{ per_page }}">Назад</a>
+      {% endif %}
+      <span class="muted">Стр. {{ page }} из {{ pages }}</span>
+      {% if page < pages %}
+        <a class="btn" href="?user_id={{ user_id }}&page={{ page+1 }}&per_page={{ per_page }}">Вперёд</a>
+      {% endif %}
+    </nav>
+  {% endif %}
+{% endif %}
+{% endblock %}

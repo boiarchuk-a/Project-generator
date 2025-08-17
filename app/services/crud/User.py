@@ -1,7 +1,7 @@
 from models.User import User
 from sqlmodel import Session, select
 from typing import List, Optional
-from models.Transaction import Transaction
+from app.models.Transaction import Transaction
 
 def add_balance(user_id: int, amount: float, session: Session) -> Optional[User]:
     user = get_user_by_id(user_id, session)

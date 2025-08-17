@@ -1,11 +1,16 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
+from sqlalchemy import select, func
+from fastapi.templating import Jinja2Templates
+from sqlalchemy import select, desc, func
+from sqlalchemy.orm import Session
 
-from models.Transaction import Transaction
-from database.database import get_session
-from services.crud.Transaction import create_transaction, get_user_transactions
+from app.models.Transaction import Transaction
+from app.database.database import get_session
+from app.services.crud.Transaction import create_transaction, get_user_transactions
 
+templates = Jinja2Templates(directory="view")
 transaction_router = APIRouter()
 
 @transaction_router.post("/deposit")
@@ -45,3 +50,53 @@ async def get_history(
     if not transactions:
         raise HTTPException(status_code=404, detail="No transactions found for this user")
     return transactions
+
+@transaction_router.get("/balance/{user_id}")
+async def get_balance(
+    user_id: int,
+    session: AsyncSession = Depends(get_session),
+):
+    # Суммируем все движения пользователя: пополнения (+) и списания (-)
+    result = await session.execute(
+        select(func.coalesce(func.sum(Transaction.amount), 0.0))
+        .where(Transaction.user_id == user_id)
+    )
+    balance = result.scalar_one()
+    return {"user_id": user_id, "balance": float(balance)}
+
+@transaction_router.get("/history")
+def transaction_history_page(
+    request: Request,
+    user_id: int = Query(..., description="ID пользователя"),
+    page: int = 1,
+    per_page: int = 20,
+    session: Session = Depends(get_session),
+):
+    offset = (page - 1) * per_page
+
+    rows = (
+        session.query(Transaction)
+        .filter(Transaction.user_id == user_id)
+        .order_by(Transaction.created_at.desc())   # замени поле, если у тебя другое
+        .offset(offset)
+        .limit(per_page)
+        .all()
+    )
+
+    total = (
+        session.query(func.count(Transaction.id))
+        .filter(Transaction.user_id == user_id)
+        .scalar()
+    )
+
+    return templates.TemplateResponse(
+        "transaction_history.html",
+        {
+            "request": request,
+            "items": rows,
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "user_id": user_id,
+        },
+    )

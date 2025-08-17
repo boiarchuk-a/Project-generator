@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Регистрация • Text2Title{% endblock %}
+{% block content %}
+<h1>Регистрация</h1>
+
+{% if errors %}
+  <div class="alert alert--error">
+    <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+  </div>
+{% endif %}
+
+<form method="post" class="card w-480">
+  <label class="form__label">E-mail</label>
+  <input name="email" value="{{ email or '' }}" required class="input" />
+
+  <label class="form__label">Пароль</label>
+  <input name="password" type="password" required class="input" />
+
+  <button class="btn btn--primary w-100 mt-2">Зарегистрироваться</button>
+</form>
+{% endblock %}
