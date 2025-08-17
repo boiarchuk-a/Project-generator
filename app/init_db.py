@@ -1,13 +1,13 @@
-from sqlmodel import SQLModel, Session
+from sqlmodel.orm import SQLModel, Session
 from datetime import datetime
-from app.database.database import engine
-from app.models.User import User
-from app.models.Transaction import Transaction
-from app.models.MLTask import MLTask
-from app.models.TitleModel import FancyModel
-from app.models.TitleService import TitleService
+from database.database import engine
+from models.User import User
+from models.Transaction import Transaction
+from app.MLTask import MLTask
+from app.TitleModel import FancyModel
+from app.TitleService import TitleService
 from services.crud.Transaction import get_user_transactions
-from app.models.TransactionHistory import TransactionHistory
+from app.TransactionHistory import TransactionHistory
 def init_db():
     SQLModel.metadata.drop_all(engine)
     SQLModel.metadata.create_all(engine)

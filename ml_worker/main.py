@@ -3,12 +3,12 @@ from datetime import datetime
 import os
 import logging
 
-from sqlmodel import Session
-from database import engine
-from models.Prediction import Prediction
-from models.Transaction import Transaction
-from models.TitleModel import FancyModel
-from models.TitleService import TitleService
+from sqlmodel.orm import Session
+from app.database.database import engine
+from app.Prediction import Prediction
+from app.models.Transaction import Transaction
+from app.TitleModel import FancyModel
+from app.TitleService import TitleService
 
 logging.basicConfig(
     level=logging.DEBUG,

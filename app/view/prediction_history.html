@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}История предсказаний{% endblock %}
+{% block content %}
+<h1 class="h2">История предсказаний</h1>
+
+{% if not items %}
+  <p class="muted">Пока нет записей.</p>
+{% else %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+      <tr>
+        <th>Дата</th>
+        <th>Входной текст</th>
+        <th>Заголовок</th>
+        <th>Кредиты</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% for p in items %}
+        <tr>
+          <td>{{ (p.timestamp or p.created_at) if (p.timestamp or p.created_at) else "-" }}</td>
+          <td class="truncate">{{ p.input_text or p.text or "-" }}</td>
+          <td class="truncate">{{ p.generated_title or p.title or "-" }}</td>
+          <td>{{ p.credits_spent or p.credits or 0 }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% set pages = (total // per_page) + (1 if total % per_page else 0) %}
+  {% if pages > 1 %}
+    <nav class="pager">
+      {% if page > 1 %}
+        <a class="btn" href="?user_id={{ user_id }}&page={{ page-1 }}&per_page={{ per_page }}">Назад</a>
+      {% endif %}
+      <span class="muted">Стр. {{ page }} из {{ pages }}</span>
+      {% if page < pages %}
+        <a class="btn" href="?user_id={{ user_id }}&page={{ page+1 }}&per_page={{ per_page }}">Вперёд</a>
+      {% endif %}
+    </nav>
+  {% endif %}
+{% endif %}
+{% endblock %}

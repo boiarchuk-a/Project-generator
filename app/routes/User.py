@@ -4,13 +4,18 @@ from models.User import User
 from services.crud import User as UserService
 from typing import List, Dict
 import logging
+from fastapi import Request, Form
+from fastapi.responses import RedirectResponse
+from fastapi.templating import Jinja2Templates
+from starlette import status
 
+templates = Jinja2Templates(directory="view")
 # Configure logging
 logger = logging.getLogger(__name__)
 
-user_route = APIRouter()
+user_router = APIRouter()
 
-@user_route.post(
+@user_router.post(
     '/signup',
     response_model=Dict[str, str],
     status_code=status.HTTP_201_CREATED,
@@ -49,7 +54,7 @@ async def signup(data: User, session=Depends(get_session)) -> Dict[str, str]:
         )
 
 
-@user_route.post('/signin')
+@user_router.post('/signin')
 async def signin(data: User, session=Depends(get_session)) -> Dict[str, str]:
     """ Authenticate existing user.
     Args:
@@ -72,7 +77,7 @@ async def signin(data: User, session=Depends(get_session)) -> Dict[str, str]:
     return {"message": "User signed in successfully"}
 
 
-@user_route.get(
+@user_router.get(
     "/users",
     response_model=List[User],
     summary="Get all users",
@@ -89,3 +94,41 @@ async def get_all_users(session=Depends(get_session)) -> List[User]:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error retrieving users"
         )
+
+@user_router.get("/signup", tags=["user"])
+async def signup_page(request: Request):
+    return templates.TemplateResponse("signup.html", {"request": request})
+
+# --- ОБРАБОТЧИК ФОРМЫ (POST из <form>) ---
+
+@user_router.post("/signup", tags=["user"])  # тот же путь, но другой метод
+async def signup_from_form(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...),
+    session=Depends(get_session),
+):
+    # Минимальная валидация
+    errors = []
+    if "@" not in email or "." not in email:
+        errors.append("Некорректный e-mail")
+    if not password:
+        errors.append("Пароль обязателен")
+    if errors:
+        return templates.TemplateResponse(
+            "signup.html", {"request": request, "errors": errors, "email": email},
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Проверка существования и создание (тем же сервисом)
+    if UserService.get_user_by_email(email, session):
+        return templates.TemplateResponse(
+            "signup.html", {"request": request, "errors": ["Пользователь уже существует"], "email": email},
+            status_code=status.HTTP_409_CONFLICT
+        )
+
+    user = User(email=email, password=password)
+    UserService.create_user(user, session)
+
+    # После регистрации отправим на страницу входа
+    return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)

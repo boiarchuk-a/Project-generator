@@ -2,22 +2,22 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
-from auth.authenticate import authenticate_cookie, authenticate
+from app.auth.authenticate import authenticate_cookie, authenticate
 from models.User import __hash_password
-from auth.jwt_handler import create_access_token
-from database.database import get_session
-from services.auth.loginform import LoginForm
-from services.crud import User as UsersService
-from database.config import get_settings
+from app.auth.jwt_handler import create_access_token
+from app.database.database import get_session
+from app.services.auth.loginform import LoginForm
+from app.services.crud import User as UsersService
+from app.database.config import get_settings
 from typing import Dict
 
 settings = get_settings()
-auth_route = APIRouter()
+auth_router = APIRouter()
 hash_password = __hash_password()
 templates = Jinja2Templates(directory="view")
 
 
-@auth_route.post("/token")
+@auth_router.post("/token")
 async def login_for_access_token(response: Response, form_data: OAuth2PasswordRequestForm = Depends(),
                                  session=Depends(get_session)) -> dict[str, str]:
     user_exist = UsersService.get_user_by_email(form_data.username, session)

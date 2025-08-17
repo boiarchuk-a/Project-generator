@@ -4,7 +4,7 @@ from fastapi.security import OAuth2
 from fastapi.security.utils import get_authorization_scheme_param
 from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
 from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
-from database.config import get_settings
+from app.database.config import get_settings
 
 settings = get_settings()
 

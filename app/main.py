@@ -1,10 +1,10 @@
-from models.MLTask import MLTask
+from app.MLTask import MLTask
 from models.User import User
-from models.Admin import Admin
-from models.TitleModel import FancyModel
-from models.TitleService import TitleService
+from app.Admin import Admin
+from app.TitleModel import FancyModel
+from app.TitleService import TitleService
 from models.Transaction import Transaction
-from models.TransactionHistory import TransactionHistory
+from app.TransactionHistory import TransactionHistory
 from datetime import datetime
 
 # --- Главная функция ---

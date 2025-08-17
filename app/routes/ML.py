@@ -3,9 +3,9 @@ from typing import Dict
 from fastapi import APIRouter, HTTPException
 from services.rm.rm import send_task
 
-ml_route = APIRouter(prefix="/ml", tags=["ML"])
+ml_router = APIRouter(prefix="/ml", tags=["ML"])
 
-@ml_route.post(
+@ml_router.post(
     "/send_task",
     response_model=Dict[str, str],
     summary="Отправить задачу в RabbitMQ",

@@ -12,9 +12,15 @@
     <div class="brand">Text<span class="accent">2</span>Title</div>
     <nav class="nav">
       <a href="/" class="nav__link">Главная</a>
+      <a href="/prediction/history?user_id=1" class="nav__link">История предсказаний</a>
+      <a href="/transaction/history?user_id=1" class="nav__link">История транзакций</a>
+      <a href="/user/signup" class="btn btn--primary">Регистрация</a>
       <a href="/prediction" class="nav__link">Предсказать</a>
       <a href="/login" class="btn btn--ghost">Войти</a>
       <a href="/logout" class="btn btn--danger">Выйти</a>
+      <span id="js-balance-badge" class="badge" style="display:none;">
+      Баланс: <span class="accent" id="js-balance-value">0</span> кр.
+      </span>
     </nav>
   </header>
 
@@ -26,5 +32,21 @@
     {% include '_site_map.html' %}
     <div class="copy">© {{ current_year if current_year is defined else '2025' }} Text2Title</div>
   </footer>
+  <script>
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    const res = await fetch("/transaction/balance/me", { credentials: "include" });
+    if (!res.ok) return;
+    const data = await res.json();
+    const badge = document.getElementById("js-balance-badge");
+    const val   = document.getElementById("js-balance-value");
+    if (badge && val && typeof data.balance !== "undefined") {
+      val.textContent = data.balance;
+      badge.style.display = "inline-flex";
+    }
+  } catch (_) { /* молча игнорируем */ }
+});
+  </script>
+
 </body>
 </html>

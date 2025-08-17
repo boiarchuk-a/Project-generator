@@ -2,8 +2,8 @@ from sys import prefix
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes.Home import home_route
-from routes.User import user_route
+from routes.Home import home_router
+from routes.User import user_router
 from routes.Transaction import transaction_router
 from routes.Prediction import prediction_router
 from database.database import init_db
@@ -40,8 +40,8 @@ def create_application() -> FastAPI:
     )
 
     # Register routes
-    app.include_router(home_route, tags=['Home'])
-    app.include_router(user_route, prefix='/api/users', tags=['Users'])
+    app.include_router(home_router, tags=['Home'])
+    app.include_router(user_router, prefix='/api/users', tags=['Users'])
     app.include_router(transaction_router, prefix='/api/transaction', tags=['Transaction'])
     app.include_router(prediction_router, prefix='/api/prediction', tags=['Prediction'])
 
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     uvicorn.run(
         'api:app',
         host='0.0.0.0',
-        port=8080,
+        port=80,
         reload=True,
         log_level="info"
     )
