@@ -8,6 +8,10 @@ from fastapi import Request, Form
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette import status
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
+from models.Transaction import Transaction
+from models.Balance import Balance
 
 templates = Jinja2Templates(directory="view")
 # Configure logging
@@ -132,3 +136,19 @@ async def signup_from_form(
 
     # После регистрации отправим на страницу входа
     return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+
+@user_router.get("/{user_id}/balance")
+async def get_user_balance(
+    user_id: int,
+    session: AsyncSession = Depends(get_session),
+):
+    # 1) Берём текущее число из БД (сумма всех движений по пользователю)
+    result = await session.execute(
+        select(func.coalesce(func.sum(Transaction.amount), 0.0))
+        .where(Transaction.user_id == user_id)
+    )
+    amount = float(result.scalar_one())
+
+    # 2) Оборачиваем в твой класс и возвращаем через его API
+    bal = Balance(amount)
+    return {"user_id": user_id, "balance": bal.get_balance()}

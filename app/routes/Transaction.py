@@ -51,19 +51,6 @@ async def get_history(
         raise HTTPException(status_code=404, detail="No transactions found for this user")
     return transactions
 
-@transaction_router.get("/balance/{user_id}")
-async def get_balance(
-    user_id: int,
-    session: AsyncSession = Depends(get_session),
-):
-    # Суммируем все движения пользователя: пополнения (+) и списания (-)
-    result = await session.execute(
-        select(func.coalesce(func.sum(Transaction.amount), 0.0))
-        .where(Transaction.user_id == user_id)
-    )
-    balance = result.scalar_one()
-    return {"user_id": user_id, "balance": float(balance)}
-
 @transaction_router.get("/history")
 def transaction_history_page(
     request: Request,
