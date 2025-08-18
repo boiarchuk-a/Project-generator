@@ -2,14 +2,14 @@ from dataclasses import dataclass, field
 from typing import List
 from Balance import Balance
 from Prediction import Prediction
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 import re
 import bcrypt
 
 if TYPE_CHECKING:
-    from app.models.Transaction import Transaction
+    from .Transaction import Transaction
 
 # --- Пользователь ---
 class User(SQLModel, table=True):
@@ -24,7 +24,7 @@ class User(SQLModel, table=True):
     _email: Optional[str] = None
     _password: Optional[str] = None
     predictions: List[Prediction] = []
-    balance: Optional[Balance] = Field(default=None, exclude=True)
+    balance: Optional["Balance"] = Relationship(back_populates="user")
 
     def __init__(self, id: int, email: str, password: str, username: str, role: str = 'user'):
         self.id = id
