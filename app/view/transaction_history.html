@@ -1,48 +1,203 @@
-{% extends "base.html" %}
-{% block title %}История транзакций{% endblock %}
-{% block content %}
-<h1 class="h2">История транзакций</h1>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>История транзакций - Text2Title</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-{% if not items %}
-  <p class="muted">Записей пока нет.</p>
-{% else %}
-  <div class="table-wrap">
-    <table class="table">
-      <thead>
-      <tr>
-        <th>Дата</th>
-        <th>Тип</th>
-        <th>Сумма</th>
-        <th>Комментарий</th>
-      </tr>
-      </thead>
-      <tbody>
-      {% for t in items %}
-        <tr>
-          <td>{{ t.created_at or t.timestamp or "-" }}</td>
-          <td>{{ t.type or t.kind or "-" }}</td>
-          <td>
-            {% if (t.type or t.kind) in ["withdraw","debit"] %}-{% endif %}
-            {{ t.amount }}
-          </td>
-          <td class="truncate">{{ t.note or t.comment or "-" }}</td>
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
 
-  {% set pages = (total // per_page) + (1 if total % per_page else 0) %}
-  {% if pages > 1 %}
-    <nav class="pager">
-      {% if page > 1 %}
-        <a class="btn" href="?user_id={{ user_id }}&page={{ page-1 }}&per_page={{ per_page }}">Назад</a>
-      {% endif %}
-      <span class="muted">Стр. {{ page }} из {{ pages }}</span>
-      {% if page < pages %}
-        <a class="btn" href="?user_id={{ user_id }}&page={{ page+1 }}&per_page={{ per_page }}">Вперёд</a>
-      {% endif %}
-    </nav>
-  {% endif %}
-{% endif %}
-{% endblock %}
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .balance-info {
+            background: #ebf5fb;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .balance-amount {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #27ae60;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .history-table th,
+        .history-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .history-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .transaction-deposit {
+            color: #27ae60;
+        }
+
+        .transaction-withdraw {
+            color: #e74c3c;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+            gap: 10px;
+        }
+
+        .pagination button {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .pagination button.active {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>История транзакций</h1>
+            <a href="/" class="back-link">← На главную</a>
+        </div>
+
+        <div class="balance-info">
+            <h3>Текущий баланс</h3>
+            <div class="balance-amount" id="balance-amount">100.00 ₽</div>
+        </div>
+
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Тип операции</th>
+                    <th>Сумма</th>
+                    <th>Описание</th>
+                </tr>
+            </thead>
+            <tbody id="transactions-table">
+                <tr>
+                    <td colspan="4" style="text-align: center;">Загрузка транзакций...</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="pagination">
+            <button onclick="changePage(1)">1</button>
+            <button onclick="changePage(2)">2</button>
+            <button onclick="changePage(3)">3</button>
+        </div>
+    </div>
+
+    <script>
+        async function loadTransactions() {
+            try {
+                // Здесь будет запрос к вашему API
+                // const response = await fetch('/transaction/history?user_id=1');
+                // const data = await response.json();
+
+                // Временные данные для демонстрации
+                const data = [
+                    {
+                        created_at: '2024-01-15 14:30',
+                        type: 'deposit',
+                        amount: 500.00,
+                        description: 'Пополнение баланса'
+                    },
+                    {
+                        created_at: '2024-01-14 10:15',
+                        type: 'withdraw',
+                        amount: -50.00,
+                        description: 'Оплата генерации заголовка'
+                    }
+                ];
+
+                const table = document.getElementById('transactions-table');
+                table.innerHTML = '';
+
+                if (data.length === 0) {
+                    table.innerHTML = '<tr><td colspan="4" style="text-align: center;">История транзакций пуста</td></tr>';
+                    return;
+                }
+
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    const amountClass = item.amount > 0 ? 'transaction-deposit' : 'transaction-withdraw';
+                    const amountSign = item.amount > 0 ? '+' : '';
+
+                    row.innerHTML = `
+                        <td>${item.created_at}</td>
+                        <td>${item.type === 'deposit' ? 'Пополнение' : 'Списание'}</td>
+                        <td class="${amountClass}">${amountSign}${item.amount.toFixed(2)} ₽</td>
+                        <td>${item.description}</td>
+                    `;
+                    table.appendChild(row);
+                });
+
+            } catch (error) {
+                console.error('Ошибка загрузки транзакций:', error);
+            }
+        }
+
+        function changePage(page) {
+            // Логика пагинации
+            loadTransactions();
+        }
+
+        // Загружаем транзакции при открытии страницы
+        document.addEventListener('DOMContentLoaded', loadTransactions);
+    </script>
+</body>
+</html>

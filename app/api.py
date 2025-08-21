@@ -1,5 +1,5 @@
 from sys import prefix
-from fastapi import FastAPI
+from fastapi import FastAPI,Request
 from fastapi.middleware.cors import CORSMiddleware
 from routes.Home import home_router
 from routes.User import user_router
@@ -11,6 +11,8 @@ from database.database import init_db
 from database.config import get_settings
 import uvicorn
 import logging
+from fastapi.staticfiles import StaticFiles
+
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -31,6 +33,7 @@ def create_application() -> FastAPI:
         redoc_url="/api/redoc"
     )
 
+
     # Configure CORS
     app.add_middleware(
         CORSMiddleware,
@@ -47,6 +50,8 @@ def create_application() -> FastAPI:
     app.include_router(prediction_router, prefix='/api/prediction', tags=['Prediction'])
     app.include_router(auth_router, prefix='/auth', tags=['Auth'])
     app.include_router(ml_router, prefix='/api/ml', tags=['ML'])
+
+    app.mount("/view", StaticFiles(directory="view", html=True), name="view")
 
     return app
 
@@ -74,7 +79,7 @@ if __name__ == '__main__':
     uvicorn.run(
         'api:app',
         host='0.0.0.0',
-        port=80,
+        port=8080,
         reload=True,
         log_level="info"
     )

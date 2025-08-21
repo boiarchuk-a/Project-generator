@@ -12,6 +12,7 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from models.Transaction import Transaction
 from models.Balance import Balance
+import bcrypt
 
 templates = Jinja2Templates(directory="view")
 # Configure logging
@@ -19,44 +20,49 @@ logger = logging.getLogger(__name__)
 
 user_router = APIRouter()
 
+
 @user_router.post(
     '/signup',
     response_model=Dict[str, str],
     status_code=status.HTTP_201_CREATED,
     summary="User Registration",
     description="Register a new user with email and password")
-async def signup(data: User, session=Depends(get_session)) -> Dict[str, str]:
-    """ Create new user account.
-    Args:
-        data: User registration data
-        session: Database session
-    Returns:
-        dict: Success message
-    Raises:
-        HTTPException: If user already exists
-    """
+async def signup_api(data: User, session: AsyncSession = Depends(get_session)) -> Dict[str, str]:
+
     try:
-        if UserService.get_user_by_email(data.email, session):
+        logger.info(f"API signup attempt for email: {data.email}")
+
+        # Проверяем существование пользователя
+        existing_user = await UserService.get_user_by_email(data.email, session)
+        if existing_user:
             logger.warning(f"Signup attempt with existing email: {data.email}")
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="User with this email already exists"
             )
 
+        # Хешируем пароль
+        hashed_password = bcrypt.hashpw(data.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+        # Создаем пользователя
         user = User(
             email=data.email,
-            password=data.password)
-        UserService.create_user(user, session)
-        logger.info(f"New user registered: {data.email}")
+            password=hashed_password
+        )
+
+        await UserService.create_user(user, session)
+        logger.info(f"New user registered via API: {data.email}")
+
         return {"message": "User successfully registered"}
 
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error during signup: {str(e)}")
+        logger.error(f"Error during API signup: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error creating user"
         )
-
 
 @user_router.post('/signin')
 async def signin(data: User, session=Depends(get_session)) -> Dict[str, str]:

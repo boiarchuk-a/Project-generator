@@ -1,31 +1,251 @@
-{% extends "base.html" %}
-{% block title %}Вход{% endblock %}
-{% block content %}
-<div class="auth">
-  <div class="card card--narrow">
-    <h1 class="h2 center">Вход</h1>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход - Text2Title</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    {% if errors %}
-      <div class="alert alert--danger">
-        {% for e in errors %}<div>{{ e }}</div>{% endfor %}
-      </div>
-    {% endif %}
-    {% if msg %}<div class="alert alert--success">{{ msg }}</div>{% endif %}
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
 
-    <!-- ВАЖНО: твой LoginForm читает поля username/password и POST на /login -->
-    <form action="/login" method="post" class="form">
-      <label class="label">Email</label>
-      <input type="email" name="username" class="input" value="{{ username or '' }}" required />
+        .container {
+            width: 100%;
+            max-width: 450px;
+        }
 
-      <label class="label">Пароль</label>
-      <input type="password" name="password" class="input" required />
+        .logo {
+            text-align: center;
+            margin-bottom: 25px;
+            color: white;
+        }
 
-      <button class="btn btn--primary" type="submit">Войти</button>
-    </form>
+        .logo h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
 
-    <div class="center muted" style="margin-top:10px">
-      Нет аккаунта? Обратитесь к администратору.
+        .logo p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .login-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            width: 100%;
+        }
+
+        .login-container h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #2c3e50;
+            font-weight: 600;
+            font-size: 1.8rem;
+        }
+
+        .input-group {
+            margin-bottom: 18px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: #34495e;
+            font-weight: 500;
+        }
+
+        .login-container input {
+            width: 100%;
+            padding: 14px 15px;
+            box-sizing: border-box;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        .login-container input:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        .login-container button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(to right, #2575fc, #6a11cb);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .login-container button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(38, 117, 252, 0.4);
+        }
+
+        .error {
+            color: #e74c3c;
+            font-size: 14px;
+            text-align: center;
+            margin-top: 15px;
+            min-height: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #fadbd8;
+            display: none;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+            color: #7f8c8d;
+            font-size: 15px;
+        }
+
+        .login-link a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .login-link a:hover {
+            color: #2575fc;
+            text-decoration: underline;
+        }
+
+        .password-container {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="logo">
+        <h1>Text2Title</h1>
+        <p>Генерация заголовков по абзацам</p>
     </div>
-  </div>
+
+    <div class="login-container">
+        <h2>Вход в систему</h2>
+
+        <div class="input-group">
+            <label for="email">Электронная почта</label>
+            <input type="email" id="email" placeholder="example@mail.ru" required>
+        </div>
+
+        <div class="input-group">
+            <label for="password">Пароль</label>
+            <div class="password-container">
+                <input type="password" id="password" placeholder="Введите ваш пароль" required>
+                <span class="toggle-password" onclick="togglePassword()">👁️</span>
+            </div>
+        </div>
+
+        <button onclick="login()">Войти</button>
+
+        <div id="error" class="error"></div>
+
+        <div class="login-link">
+            Нет аккаунта? <a href="/view/signup.html">Зарегистрируйтесь</a>
+        </div>
+    </div>
 </div>
-{% endblock %}
+
+<script>
+    function togglePassword() {
+        const passwordInput = document.getElementById('password');
+        const toggleButton = document.querySelector('.toggle-password');
+
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleButton.textContent = '🔒';
+        } else {
+            passwordInput.type = 'password';
+            toggleButton.textContent = '👁️';
+        }
+    }
+
+    async function login() {
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const errorElement = document.getElementById('error');
+
+        errorElement.style.display = 'none';
+
+        if (!email || !password) {
+            showError('Заполните все поля');
+            return;
+        }
+
+        try {
+            const response = await fetch('/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `username=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`
+            });
+
+            if (response.ok) {
+                window.location.href = '/';
+            } else {
+                showError('Неверный email или пароль');
+            }
+        } catch (err) {
+            showError('Ошибка сети');
+        }
+    }
+
+    function showError(message) {
+        const errorElement = document.getElementById('error');
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputs = document.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    login();
+                }
+            });
+        });
+    });
+</script>
+</body>
+</html>

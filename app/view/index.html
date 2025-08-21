@@ -1,35 +1,101 @@
 {% extends "base.html" %}
-{% block title %}Главная — Text2Title{% endblock %}
+
+{% block title %}Главная — Event Planner | Text2Title{% endblock %}
+
 {% block content %}
+  <div class="hero">
+    <h1 class="title">Text2Title</h1>
+    <p class="subtitle">
+      Вставьте абзац — получите чёткий заголовок с помощью модели.  
+      Чтобы сохранять историю и управлять балансом, авторизуйтесь.
+    </p>
 
-<section class="grid grid--2">
-  <div class="card">
-    <h1 class="h1">Text<span class="accent">2</span>Title</h1>
-    <p class="muted">Онлайн-модель для генерации заголовков из абзацев текста.</p>
+    <div id="cta-row" class="row" style="gap:12px;margin-bottom:18px"></div>
 
-    {% if error %}<div class="alert alert--danger">{{ error }}</div>{% endif %}
-    {% if result %}
-      <div class="card card--sub">
-        <h3 class="h3">Результат</h3>
-        <pre class="mono" style="white-space:pre-wrap">{{ result }}</pre>
+    <div class="grid-2">
+      <div class="panel">
+        <h3 style="margin-top:0">Сгенерировать заголовок</h3>
+        <div id="errorBox" class="alert" style="display:none"></div>
+
+        <textarea id="input_text" class="field" rows="8" placeholder="Вставьте абзац..."></textarea>
+        <div class="row" style="margin-top:12px;gap:10px">
+          <button class="btn-primary" onclick="generate()">Сгенерировать</button>
+        </div>
+
+        <div class="hr"></div>
+        <div>
+          <div class="muted" style="margin-bottom:6px">Результат</div>
+          <div id="resultBox" class="panel" style="padding:12px"></div>
+        </div>
       </div>
-    {% endif %}
 
-    <form class="form" action="/prediction" method="post">
-      <label class="label">Текст для заголовка</label>
-      <textarea name="input_text" rows="8" class="input" placeholder="Вставьте абзац здесь..." required></textarea>
-      <button class="btn btn--primary" type="submit">Сгенерировать заголовок</button>
-    </form>
+      <div class="panel">
+        <h3 style="margin-top:0">Учёт и доступ</h3>
+        <p class="muted" id="auth-helper">
+          …
+        </p>
+        <div class="row" id="auth-actions" style="gap:10px"></div>
+      </div>
+    </div>
   </div>
+{% endblock %}
 
-  <div class="card">
-    <h2 class="h2">Справка</h2>
-    <ul class="bullets">
-      <li>API истории: <code>/prediction/history/{user_id}</code></li>
-      <li>API предсказания: <code>POST /prediction</code> c <code>{"input_text": "..."}</code></li>
-      <li>Очередь задач: <code>POST /ml/send_task?message=...</code></li>
-    </ul>
-  </div>
-</section>
+{% block scripts %}
+<script>
+  async function generate(){
+    const err = document.getElementById('errorBox');
+    err.style.display='none'; err.textContent='';
+    const text = document.getElementById('input_text').value.trim();
+    if(!text){ err.textContent='Введите текст абзаца.'; err.style.display='block'; return; }
+    try{
+      const r = await fetch('/prediction?input_text=' + encodeURIComponent(text), { method:'POST', credentials:'include' });
+      const data = await r.json();
+      if(!r.ok){ throw new Error(data.detail || 'Ошибка генерации'); }
+      document.getElementById('resultBox').textContent = data.title || JSON.stringify(data);
+    }catch(e){
+      err.textContent = e.message || 'Ошибка';
+      err.style.display='block';
+    }
+  }
 
+  async function fillAuthBlocks(){
+    const me = await getMe();
+    const cta = document.getElementById('cta-row');
+    const helper = document.getElementById('auth-helper');
+    const actions = document.getElementById('auth-actions');
+    cta.innerHTML = ''; actions.innerHTML = '';
+
+    if(me && me.username){
+      helper.textContent = `Вы вошли как ${me.username}. Баланс: ${(me.balance ?? 0)} ₽.`;
+      const btnHist = document.createElement('a');
+      btnHist.href='/view/transaction_history.html';
+      btnHist.className='btn';
+      btnHist.textContent='История/Баланс';
+
+      const btnPred = document.createElement('a');
+      btnPred.href='/view/prediction_history.html';
+      btnPred.className='btn';
+      btnPred.textContent='История предсказаний';
+
+      actions.append(btnHist, btnPred);
+    }else{
+      helper.textContent = 'Чтобы сохранять историю и управлять балансом — войдите или зарегистрируйтесь.';
+      const login = document.createElement('a');
+      login.href='/view/login.html';
+      login.className='btn';
+      login.textContent='Войти';
+      const sign = document.createElement('a');
+      sign.href='/view/signup.html';
+      sign.className='btn-primary';
+      sign.textContent='Регистрация';
+      actions.append(login, sign);
+
+      // Дополнительные CTA сверху
+      const topLogin = login.cloneNode(true);
+      const topSign = sign.cloneNode(true);
+      cta.append(topLogin, topSign);
+    }
+  }
+  fillAuthBlocks();
+</script>
 {% endblock %}
