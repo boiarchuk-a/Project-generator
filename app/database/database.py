@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlmodel import Session
 from sqlmodel import SQLModel, create_engine, select
 
 from database.config import get_settings
@@ -48,21 +48,24 @@ def init_db(drop_all: bool = False) -> None:
         # Создание начальных данных
         with Session(engine) as session:
             # Проверяем, существуют ли уже пользователи
-            if session.exec(select(User)).first() is None:
-                hash_password = User.hash_password
+            if session.exec(select(User.id)).first() is None:
+                #hash_password = User.hash_password
 
                 # Создание стандартных пользователей
                 admin = User(
+                    username = "admin",
                     email="admin@example.com",
-                    password=hash_password.create_hash("admin123")
+                    hashed_password=User.hash_password("admin123")
                 )
                 user1 = User(
+                    username = "user1",
                     email="user1@example.com",
-                    password=hash_password.create_hash("user123")
+                    hashed_password=User.hash_password("user123")
                 )
                 user2 = User(
+                    username = "user2",
                     email="user2@example.com",
-                    password=hash_password.create_hash("user123")
+                    hashed_password=User.hash_password("user123")
                 )
 
                 # Сохранение в базу данных
