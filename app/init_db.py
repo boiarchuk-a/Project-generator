@@ -1,9 +1,10 @@
-from sqlmodel.orm import SQLModel, Session
+from sqlmodel import SQLModel
+from sqlalchemy.orm import Session
 from datetime import datetime
 from database.database import engine
 from models.User import User
 from models.Transaction import Transaction
-from app.MLTask import MLTask
+from app.models.MLTask import MLTask
 from app.TitleModel import FancyModel
 from app.TitleService import TitleService
 from services.crud.Transaction import get_user_transactions

@@ -3,14 +3,14 @@ from fastapi.testclient import TestClient
 # ---------- POSITIVE ----------
 def test_transactions_flow_positive(client: TestClient, fixed_headers):
     """После +100 и -30 в истории появляются соответствующие записи в конце."""
-    r1 = client.post("/api/transaction/deposit", headers=fixed_headers, json={"amount": 100})
-    assert r1.status_code == 200, r1.text
-    r2 = client.post("/api/transaction/withdraw", headers=fixed_headers, json={"amount": 30})
-    assert r2.status_code == 200, r2.text
+    dep_resp = client.post("/api/transaction/deposit", headers=fixed_headers, json={"amount": 100})
+    assert dep_resp.status_code == 200, dep_resp.text
+    wd_resp = client.post("/api/transaction/withdraw", headers=fixed_headers, json={"amount": 30})
+    assert wd_resp.status_code == 200, wd_resp.text
 
-    r = client.get("/api/transaction/me", headers=fixed_headers)
-    assert r.status_code == 200, r.text
-    tx = r.json()
+    history_response  = client.get("/api/transaction/me", headers=fixed_headers)
+    assert history_response .status_code == 200, history_response .text
+    tx = history_response .json()
     assert isinstance(tx, list) and len(tx) >= 2
 
     last_two = tx[-2:]
@@ -30,5 +30,5 @@ def test_transactions_flow_positive(client: TestClient, fixed_headers):
 
 # ---------- NEGATIVE ----------
 def test_transactions_unauthorized_negative(client: TestClient):
-    r = client.get("/api/transaction/me")
-    assert r.status_code in (401, 403, 200), r.text
+    history_response  = client.get("/api/transaction/me")
+    assert history_response .status_code in (401, 403, 200), history_response .text

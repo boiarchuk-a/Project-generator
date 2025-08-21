@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 # --- История транзакций ---
 class Transaction(SQLModel, table=True):
-    user: Optional[User] = Relationship(back_populates="transactions")
+    user: Optional["User"] = Relationship(back_populates="transactions")
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
 

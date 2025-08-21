@@ -1,4 +1,4 @@
-from app.MLTask import MLTask
+from app.models.MLTask import MLTask
 from models.User import User
 from app.Admin import Admin
 from app.TitleModel import FancyModel

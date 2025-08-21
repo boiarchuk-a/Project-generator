@@ -6,9 +6,9 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import select, desc, func
 from sqlalchemy.orm import Session
 
-from app.models.Transaction import Transaction
-from app.database.database import get_session
-from app.services.crud.Transaction import create_transaction, get_user_transactions
+from models.Transaction import Transaction
+from database.database import get_session
+from services.crud.Transaction import create_transaction, get_user_transactions
 
 templates = Jinja2Templates(directory="view")
 transaction_router = APIRouter()

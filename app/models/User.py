@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from typing import List
-from Balance import Balance
+from .Balance import Balance
 from Prediction import Prediction
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, TYPE_CHECKING
@@ -23,7 +23,6 @@ class User(SQLModel, table=True):
     # приватные поля
     _email: Optional[str] = None
     _password: Optional[str] = None
-    predictions: List[Prediction] = []
     balance: Optional["Balance"] = Relationship(back_populates="user")
 
     def __init__(self, id: int, email: str, password: str, username: str, role: str = 'user'):
@@ -32,7 +31,7 @@ class User(SQLModel, table=True):
         self.role = role
         self._email = email
         self._password = password
-        self.predictions = []
+        self.predictions: List[Prediction] = []
         self.balance = Balance()
         self.__post_init__()
 
@@ -48,14 +47,15 @@ class User(SQLModel, table=True):
     def __validate_password(self):
         if len(self._password) < 8:
             raise ValueError("Пароль должен быть не менее 8 символов")
-        self.__password = self.__hash_password(self._password)
+        self.__password = self.hash_password(self._password)
 
-    def __hash_password(self, password: str) -> bytes:
+    @staticmethod
+    def hash_password(password: str) -> bytes:
         salt = bcrypt.gensalt()
         return bcrypt.hashpw(password.encode(), salt)
 
     def check_password(self, input_password: str) -> bool:
-        return self.__hash_password(input_password) == self._password
+        return self.hash_password(input_password) == self._password
 
     def get_email(self) -> str:
         return self._email

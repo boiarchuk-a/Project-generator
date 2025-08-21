@@ -2,18 +2,18 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
-from app.auth.authenticate import authenticate_cookie, authenticate
-from models.User import __hash_password
-from app.auth.jwt_handler import create_access_token
-from app.database.database import get_session
-from app.services.auth.loginform import LoginForm
-from app.services.crud import User as UsersService
-from app.database.config import get_settings
+from auth.authenticate import authenticate_cookie, authenticate
+from models.User import User
+from auth.jwt_handler import create_access_token
+from database.database import get_session
+from services.auth.loginform import LoginForm
+from services.crud import User as UsersService
+from database.config import get_settings
 from typing import Dict
 
 settings = get_settings()
 auth_router = APIRouter()
-hash_password = __hash_password()
+hash_password = User.hash_password
 templates = Jinja2Templates(directory="view")
 
 
@@ -41,7 +41,7 @@ async def login_for_access_token(response: Response, form_data: OAuth2PasswordRe
     )
 
 
-@auth_route.get("/login", response_class=HTMLResponse)
+@auth_router.get("/login", response_class=HTMLResponse)
 async def login_get(request: Request):
     context = {
         "request": request,
@@ -49,7 +49,7 @@ async def login_get(request: Request):
     return templates.TemplateResponse("login.html", context)
 
 
-@auth_route.post("/login", response_class=HTMLResponse)
+@auth_router.post("/login", response_class=HTMLResponse)
 async def login_post(request: Request, session=Depends(get_session)):
     form = LoginForm(request)
     await form.load_data()
@@ -67,7 +67,7 @@ async def login_post(request: Request, session=Depends(get_session)):
     return templates.TemplateResponse("login.html", form.__dict__)
 
 
-@auth_route.get("/logout", response_class=HTMLResponse)
+@auth_router.get("/logout", response_class=HTMLResponse)
 async def login_get():
     """
        Выход: удаляем cookie и отправляем на главную.

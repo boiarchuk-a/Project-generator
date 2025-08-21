@@ -1,26 +1,83 @@
-import os
+import json
 import pika
+import logging
+from typing import Optional
 
-RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@rabbitmq:5672/")
-QUEUE_NAME   = os.getenv("QUEUE_NAME", "predictions")
+from models.MLTask import MLTask, TaskStatus
 
-connection_params = pika.URLParameters(RABBITMQ_URL)
 
-def send_task(message: str) -> None:
+logging.getLogger('pika').setLevel(logging.INFO)
+
+
+class RabbitMQClient:
     """
-    Отправка задачи в очередь RabbitMQ.
-    Принимает строку; при желании можно передавать JSON-строки.
+    Клиент для взаимодействия с RabbitMQ.
+
+    Attributes:
+        connection_params: Параметры подключения к RabbitMQ серверу
+        queue_name: Имя очереди для ML задач
     """
-    connection = pika.BlockingConnection(connection_params)
-    channel = connection.channel()
 
-    channel.queue_declare(queue=QUEUE_NAME, durable=True)
+    def __init__(
+            self,
+            host: str = 'rabbitmq',
+            port: int = 5672,
+            username: str = 'rmuser',
+            password: str = 'rmpassword',
+            queue_name: str = 'ml_task_queue'
+    ):
+        self.connection_params = pika.ConnectionParameters(
+            host=host,
+            port=port,
+            virtual_host='/',
+            credentials=pika.PlainCredentials(username=username, password=password),
+            heartbeat=30,
+            blocked_connection_timeout=2
+        )
+        self.queue_name = queue_name
 
-    channel.basic_publish(
-        exchange="",
-        routing_key=QUEUE_NAME,
-        body=message.encode("utf-8"),
-        properties=pika.BasicProperties(delivery_mode=2),
-    )
+    def send_task(self, task: MLTask) -> bool:
+        """
+        Отправляет ML задачу в очередь RabbitMQ.
+        Args:
+            task: Объект MLTask для обработки
+        Returns:
+            bool: True если отправка прошла успешно, False в случае ошибки
+        Raises:
+            pika.exceptions.AMQPError: При проблемах с подключением к RabbitMQ
+        """
+        try:
+            connection = pika.BlockingConnection(self.connection_params)
+            channel = connection.channel()
 
-    connection.close()
+            channel.queue_declare(queue=self.queue_name, durable=True)
+
+            message = json.dumps(task.to_queue_message(), ensure_ascii=False, default=str)
+
+            channel.basic_publish(
+                exchange='',
+                routing_key=self.queue_name,
+                body=message.encode('utf-8'),
+                properties=pika.BasicProperties(delivery_mode=2),
+            )
+
+            connection.close()
+            return True
+
+        except pika.exceptions.AMQPError as e:
+            logging.error(f"RabbitMQ error: {str(e)}")
+            return False
+
+
+# Создаем глобальный экземпляр клиента
+rabbit_client = RabbitMQClient()
+
+
+def send_ml_task(task: MLTask) -> bool:
+    """
+    Отправляет ML задачу на обработку.
+    """
+    success = rabbit_client.send_task(task)
+    if success:
+        task.status = TaskStatus.QUEUED
+    return success
