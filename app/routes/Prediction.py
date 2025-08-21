@@ -4,10 +4,10 @@ from fastapi import Request, Depends, Query
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import select, desc, func
 from datetime import datetime
-from app.models.User import User
-from app.Prediction import Prediction
+from models.User import User
+from Prediction import Prediction
 from pydantic import BaseModel
-from app.database.database import get_session
+from database.database import get_session
 from typing import List
 
 templates = Jinja2Templates(directory="view")

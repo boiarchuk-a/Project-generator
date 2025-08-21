@@ -1,5 +1,6 @@
 from models.Transaction import Transaction
-from sqlmodel.orm import Session, select
+from sqlmodel import select
+from sqlalchemy.orm import Session
 from typing import List, Optional
 
 def get_user_transactions(user_id: int, session: Session) -> List[Transaction]:
