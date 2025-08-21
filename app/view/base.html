@@ -1,52 +1,39 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{% block title %}Text2Title{% endblock %}</title>
-  <link rel="stylesheet" href="/static/style.css" />
-  {% block head %}{% endblock %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Text2Title - Генерация заголовков{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
-<body class="bg">
-  <header class="container header">
-    <div class="brand">Text<span class="accent">2</span>Title</div>
-    <nav class="nav">
-      <a href="/" class="nav__link">Главная</a>
-      <a href="/prediction/history?user_id=1" class="nav__link">История предсказаний</a>
-      <a href="/transaction/history?user_id=1" class="nav__link">История транзакций</a>
-      <a href="/user/signup" class="btn btn--primary">Регистрация</a>
-      <a href="/prediction" class="nav__link">Предсказать</a>
-      <a href="/login" class="btn btn--ghost">Войти</a>
-      <a href="/logout" class="btn btn--danger">Выйти</a>
-      <span id="js-balance-badge" class="badge" style="display:none;">
-      Баланс: <span class="accent" id="js-balance-value">0</span> кр.
-      </span>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h1>Text2Title</h1>
+            </div>
+            <div class="nav-menu">
+                <a href="/" class="nav-link">Главная</a>
+                <a href="/view/prediction_history.html" class="nav-link">История</a>
+                <a href="/view/transaction_history.html" class="nav-link">Транзакции</a>
+                {% if user %}
+                    <a href="/logout" class="nav-link">Выйти</a>
+                {% else %}
+                    <a href="/view/login.html" class="nav-link">Войти</a>
+                    <a href="/view/signup.html" class="nav-link">Регистрация</a>
+                {% endif %}
+            </div>
+        </div>
     </nav>
-  </header>
 
-  <main class="container py">
-    {% block content %}{% endblock %}
-  </main>
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
 
-  <footer class="container footer">
-    {% include '_site_map.html' %}
-    <div class="copy">© {{ current_year if current_year is defined else '2025' }} Text2Title</div>
-  </footer>
-  <script>
-document.addEventListener("DOMContentLoaded", async () => {
-  try {
-    const res = await fetch("/transaction/balance/me", { credentials: "include" });
-    if (!res.ok) return;
-    const data = await res.json();
-    const badge = document.getElementById("js-balance-badge");
-    const val   = document.getElementById("js-balance-value");
-    if (badge && val && typeof data.balance !== "undefined") {
-      val.textContent = data.balance;
-      badge.style.display = "inline-flex";
-    }
-  } catch (_) { /* молча игнорируем */ }
-});
-  </script>
-
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2024 Text2Title. Все права защищены.</p>
+        </div>
+    </footer>
 </body>
 </html>

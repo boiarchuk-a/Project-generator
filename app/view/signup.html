@@ -1,21 +1,338 @@
-{% extends "base.html" %}
-{% block title %}Регистрация • Text2Title{% endblock %}
-{% block content %}
-<h1>Регистрация</h1>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация - Text2Title</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-{% if errors %}
-  <div class="alert alert--error">
-    <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
-  </div>
-{% endif %}
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
 
-<form method="post" class="card w-480">
-  <label class="form__label">E-mail</label>
-  <input name="email" value="{{ email or '' }}" required class="input" />
+        .container {
+            width: 100%;
+            max-width: 450px;
+        }
 
-  <label class="form__label">Пароль</label>
-  <input name="password" type="password" required class="input" />
+        .logo {
+            text-align: center;
+            margin-bottom: 25px;
+            color: white;
+        }
 
-  <button class="btn btn--primary w-100 mt-2">Зарегистрироваться</button>
-</form>
-{% endblock %}
+        .logo h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .logo p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .login-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            width: 100%;
+        }
+
+        .login-container h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #2c3e50;
+            font-weight: 600;
+            font-size: 1.8rem;
+        }
+
+        .input-group {
+            margin-bottom: 18px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: #34495e;
+            font-weight: 500;
+        }
+
+        .login-container input {
+            width: 100%;
+            padding: 14px 15px;
+            box-sizing: border-box;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        .login-container input:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        .login-container button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(to right, #2575fc, #6a11cb);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .login-container button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(38, 117, 252, 0.4);
+        }
+
+        .error {
+            color: #e74c3c;
+            font-size: 14px;
+            text-align: center;
+            margin-top: 15px;
+            min-height: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #fadbd8;
+            display: none;
+        }
+
+        .success {
+            color: #27ae60;
+            font-size: 14px;
+            text-align: center;
+            margin-top: 15px;
+            min-height: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #d5f5e3;
+            display: none;
+        }
+
+        #description {
+            display: block;
+            color: #2c3e50;
+            text-align: center;
+            font-size: 15px;
+            border: 2px dashed #3498db;
+            padding: 15px;
+            border-radius: 10px;
+            background-color: #ebf5fb;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+            color: #7f8c8d;
+            font-size: 15px;
+        }
+
+        .login-link a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .login-link a:hover {
+            color: #2575fc;
+            text-decoration: underline;
+        }
+
+        .optional {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        .password-container {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #7f8c8d;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 20px;
+            }
+
+            .logo h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="logo">
+        <h1>Text2Title</h1>
+        <p>Генерация заголовков по абзацам</p>
+    </div>
+
+    <div class="login-container">
+        <h3 id="description">
+            Сервис для автоматической генерации заголовков на основе анализа текста с использованием современных ML-технологий
+        </h3>
+
+        <h2>Регистрация</h2>
+
+        <div class="input-group">
+            <label for="email">Электронная почта</label>
+            <input type="email" id="email" placeholder="example@mail.ru" required>
+        </div>
+
+        <div class="input-group">
+            <label for="password">Пароль</label>
+            <div class="password-container">
+                <input type="password" id="password" placeholder="Не менее 8 символов" required>
+                <span class="toggle-password" onclick="togglePassword()">👁️</span>
+            </div>
+        </div>
+
+        <button onclick="signup()">Зарегистрироваться</button>
+
+        <div id="error" class="error"></div>
+        <div id="success" class="success"></div>
+
+        <div class="login-link">
+            Уже есть аккаунт? <a href="/view/login.html">Войдите</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Функция для показа/скрытия пароля
+    function togglePassword() {
+        const passwordInput = document.getElementById('password');
+        const toggleButton = document.querySelector('.toggle-password');
+
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleButton.textContent = '🔒';
+        } else {
+            passwordInput.type = 'password';
+            toggleButton.textContent = '👁️';
+        }
+    }
+
+    // Функция валидации email
+    function isValidEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    }
+
+    // Функция регистрации - ИСПРАВЛЕННАЯ версия с JSON
+    async function signup() {
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+
+        const errorElement = document.getElementById('error');
+        errorElement.style.display = 'none';
+
+        // Валидация
+        if (!password || !email) {
+            showError('Заполните обязательные поля');
+            return;
+        }
+
+        if (!isValidEmail(email)) {
+            showError('Введите корректный email адрес');
+            return;
+        }
+
+        if (password.length < 8) {
+            showError('Пароль должен содержать не менее 8 символов');
+            return;
+        }
+
+        try {
+            console.log('Отправка данных в формате JSON');
+
+            // ИСПРАВЛЕНИЕ: Используем JSON вместо FormData
+            const requestData = {
+                email: email,
+                password: password
+            };
+
+            const response = await fetch('/api/users/signup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            console.log('Статус ответа:', response.status);
+
+            if (response.ok) {
+                // Успешная регистрация
+                console.log('Регистрация успешна! Перенаправление...');
+                window.location.href = '/view/login.html';
+            } else if (response.status === 409) {
+                showError('Пользователь с таким email уже существует');
+            } else if (response.status === 400) {
+                const errorData = await response.json();
+                showError('Ошибка валидации: ' + (errorData.detail || 'Неверные данные'));
+            } else {
+                const errorText = await response.text();
+                showError('Ошибка сервера: ' + errorText);
+            }
+
+        } catch (err) {
+            showError('Ошибка сети: ' + err.message);
+            console.error('Ошибка:', err);
+        }
+    }
+
+    function showError(message) {
+        const errorElement = document.getElementById('error');
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+    }
+
+    // Добавляем обработчик события для отправки формы по нажатию Enter
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputs = document.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    signup();
+                }
+            });
+        });
+
+        console.log('Готово к отправке JSON данных на /api/users/signup');
+    });
+</script>
+</body>
+</html>

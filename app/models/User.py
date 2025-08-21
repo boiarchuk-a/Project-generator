@@ -20,10 +20,9 @@ class User(SQLModel, table=True):
     hashed_password: str
     role: str = "user"
     created_at: datetime = Field(default_factory=datetime.utcnow)
-
+    email: str = Field(index=True, unique=True)
 
     # приватные поля
-    _email: Optional[str] = None
     _password: Optional[str] = None
     balance: Optional["Balance"] = Relationship(back_populates="user")
     transactions: List["Transaction"] = Relationship(back_populates="user")
@@ -36,13 +35,13 @@ class User(SQLModel, table=True):
 
     def __validate_email(self):
         pattern = re.compile(r'^[\w\.-]+@[\w\.-]+\.\w+$')
-        if not pattern.match(self._email):
+        if not pattern.match(self.email):
             raise ValueError("Неверный формат email")
 
     def __validate_password(self):
         if len(self._password) < 8:
             raise ValueError("Пароль должен быть не менее 8 символов")
-        self.__password = self.hash_password(self._password)
+        self.hashed_password = self.hash_password(self._password)
 
     @staticmethod
     def hash_password(password: str) -> str:
@@ -50,10 +49,10 @@ class User(SQLModel, table=True):
         return bcrypt.hashpw(password.encode(), salt)
 
     def check_password(self, input_password: str) -> bool:
-        return self.hash_password(input_password) == self._password
+        return self.hash_password(input_password) == self.hashed_password
 
     def get_email(self) -> str:
-        return self._email
+        return self.email
 
     def add_prediction(self, prediction: Prediction):
         self.predictions.append(prediction)
@@ -62,4 +61,4 @@ class User(SQLModel, table=True):
         return self.predictions
 
     def __str__(self):
-        return f"[User] {self._email} — Баланс: {self.balance}"
+        return f"[User] {self.email} — Баланс: {self.balance}"
