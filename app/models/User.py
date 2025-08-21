@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List
+
+from models.MLTask import MLTask
 from .Balance import Balance
 from Prediction import Prediction
 from sqlmodel import SQLModel, Field, Relationship
@@ -24,16 +26,9 @@ class User(SQLModel, table=True):
     _email: Optional[str] = None
     _password: Optional[str] = None
     balance: Optional["Balance"] = Relationship(back_populates="user")
+    transactions: List["Transaction"] = Relationship(back_populates="user")
+    ml_tasks: List["MLTask"] = Relationship(back_populates="user")
 
-    def __init__(self, id: int, email: str, password: str, username: str, role: str = 'user'):
-        self.id = id
-        self.username = username
-        self.role = role
-        self._email = email
-        self._password = password
-        self.predictions: List[Prediction] = []
-        self.balance = Balance()
-        self.__post_init__()
 
     def __post_init__(self):
         self.__validate_email()
@@ -50,7 +45,7 @@ class User(SQLModel, table=True):
         self.__password = self.hash_password(self._password)
 
     @staticmethod
-    def hash_password(password: str) -> bytes:
+    def hash_password(password: str) -> str:
         salt = bcrypt.gensalt()
         return bcrypt.hashpw(password.encode(), salt)
 

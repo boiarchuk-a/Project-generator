@@ -80,13 +80,15 @@ services:
   database:
     image: postgres:latest
     platform: linux/amd64
+    restart: unless-stopped
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
     volumes:
-      - db_data:/var/lib/postgresql/data
-    restart: unless-stopped
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - event-planner-network
 
   ollama:
     image: ollama/ollama
@@ -104,7 +106,7 @@ services:
 volumes:
   rabbitmq_data:
     driver: local
-  db_data:
+  postgres_data:
     driver: local
   ollama_data:
 

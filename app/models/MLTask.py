@@ -44,7 +44,7 @@ class MLTask(MLTaskBase, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
-    creator: Optional["User"] = Relationship(
+    user: Optional["User"] = Relationship(
         back_populates="ml_tasks",
         sa_relationship_kwargs={"lazy": "selectin"},
     )
