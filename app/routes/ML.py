@@ -1,136 +1,135 @@
-import logging
-from typing import Dict, List
-from fastapi import APIRouter, HTTPException, Depends
-from sqlalchemy.orm import Session
-from database.database import get_session
-from models.MLTask import MLTask, TaskStatus, MLTaskCreate
-from services.rm.rm import rabbit_client
-from services.rm.rpc import rpc_client
-from services.logging.logging import get_logger
-from services.crud.MLTask import MLTaskService
+from datetime import date
+from decimal import Decimal
+from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List, Optional
+import aiohttp
+import json
+import os
 
-logging.getLogger('pika').setLevel(logging.INFO)
-
-logger = get_logger(logger_name=__name__)
+from app.auth import access_token_user
+from app.database.database import get_session
+from app.ML import ML, IncorrectML
+from app.MLstatus import MLstatus
+from app.mlworkerproxy import MLWorkerProxy
+from app.models.User import User
+from app.MLhistory import MLhistory
+from app.Prediction import Prediction
+from app.shemas.Mllogdata import MLlogdata
+from app.shemas.Mllogupdatedata import MLlogupdatedata
+from app.Admin import Admin, UserNotFound
 
 ml_router = APIRouter()
 
 
-def get_mltask_service(session: Session = Depends(get_session)) -> MLTaskService:
-    return MLTaskService(session)
+class OllamaClient:
+    def __init__(self):
+        # Используем host.docker.internal для доступа к хосту из контейнера
+        # или имя сервиса Ollama в Docker Compose
+        self.ollama_url = os.getenv("OLLAMA_URL", "http://host.docker.internal:11434")
+        self.model_name = os.getenv("OLLAMA_MODEL", "qwen2.5:7b-instruct")
+
+    async def generate_title(self, text: str) -> dict:
+        """Генерирует заголовок для текста используя Ollama"""
+        try:
+            prompt = f"""
+            Создай краткий и информативный заголовок для этого текста на русском языке.
+            Заголовок должен отражать основную суть текста и быть не длиннее 10 слов.
+
+            Текст: {text}
+
+            Заголовок:
+            """
+
+            data = {
+                "model": self.model_name,
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": 0.7,
+                    "max_tokens": 50,
+                }
+            }
+
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                        f"{self.ollama_url}/api/generate",
+                        json=data,
+                        timeout=30
+                ) as response:
+
+                    if response.status == 200:
+                        result = await response.json()
+                        title = result.get('response', '').strip()
+                        return {"title": title, "success": True}
+                    else:
+                        return {"error": f"Ollama API error: {response.status}", "success": False}
+
+        except Exception as e:
+            return {"error": str(e), "success": False}
 
 
-@ml_router.post(
-    "/send_task",
-    response_model=Dict[str, str],
-    summary="ML endpoint",
-    description="Send ml request"
+# Создаем клиент Ollama
+ollama_client = OllamaClient()
+
+
+@ml_router.post("/execute", summary="Отправляет запрос на исполнение")
+async def send_query_for_execution(
+        text: str,
+        user: User = Depends(access_token_user),
+        session=Depends(get_session)
+):
+    ml_worker_proxy = MLWorkerProxy(session)
+    try:
+        query = ML(text)
+        # Генерируем заголовок сразу при выполнении запроса
+        result = await ollama_client.generate_title(text)
+        if result["success"]:
+            # Создаем prediction с заголовком
+            prediction = Prediction(title=result["title"])
+            await ml_worker_proxy.send(user, query, prediction)
+        else:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                                f"Ошибка генерации заголовка: {result.get('error', 'Unknown error')}")
+    except Exception as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+
+
+@ml_router.get("/price", summary="Возвращает стоимость выполнения запроса")
+def get_query_price(
+        text: str
+) -> Decimal:
+    try:
+        return ML(text).price
+    except IncorrectML as iq:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(iq))
+
+
+@ml_router.put(
+    "/update", summary="Служебный endpoint для получения данных от воркера"
 )
-async def send_task(message: str, user_id: int, mltask_service: MLTaskService = Depends(get_mltask_service)) -> str:
-    """
-    Root endpoint returning welcome message.
-
-    Returns:
-        Dict[str, str]: Welcome message
-    """
-    created_task = None
-    try:
-        mltask = MLTaskCreate(question=message, user_id=user_id, status=TaskStatus.NEW)
-        created_task = mltask_service.create(mltask)
-        logger.info(f"Massage has created: {created_task}")
-
-        logger.info(f"Sending task to RabbitMQ: {message}")
-        rabbit_client.send_task(created_task)
-        mltask_service.set_status(created_task.id, TaskStatus.QUEUED)
-        return {"message": "Task sent successfully!"}
-    except Exception as e:
-        if created_task:
-            mltask_service.set_status(created_task.id, TaskStatus.FAILED)
-        logger.error(f"Unexpected error in sending task: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+async def update_querylog(query_log_update: MLlogupdatedata, session=Depends(get_session)):
+    ml_worker_proxy = MLWorkerProxy(session)
+    await ml_worker_proxy.recieve(
+        query_log_update.id,
+        MLstatus(query_log_update.status),
+        (
+            Prediction(**query_log_update.result_dict)
+            if query_log_update.result_dict
+            else None
+        ),
+    )
 
 
-@ml_router.post("/send_task_result", response_model=Dict[str, str])
-def send_task_result(
-        task_id: int,
-        result: str,
-        mltask_service: MLTaskService = Depends(get_mltask_service)
-) -> Dict[str, str]:
-    """
-    Endpoint for sending ML task using Result.
-
-    Args:
-        message (str): The message to be sent.
-        user_id (int): ID of the user creating the task.
-
-    Returns:
-        Dict[str, str]: Response message with original and processed text.
-    """
-    try:
-        mltask_service.set_result(task_id, result)
-        logger.info(f"!!!!!!!!Task result has been set: {result}")
-        return {"message": "Task result sent successfully!"}
-    except Exception as e:
-        logger.error(f"Unexpected error in sending task result: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
-
-
-@ml_router.post("/send_task_rpc", response_model=Dict[str, str])
-async def send_task_rpc(
-        message: str,
-        user_id: int,
-        mltask_service: MLTaskService = Depends(get_mltask_service)
-) -> Dict[str, str]:
-    """
-    Endpoint for sending ML task using RPC.
-
-    Args:
-        message (str): The message to be sent.
-        user_id (int): ID of the user creating the task.
-
-    Returns:
-        Dict[str, str]: Response message with original and processed text.
-    """
-
-    try:
-        # Create task using service
-        task_create = MLTaskCreate(
-            question=message,
-            user_id=user_id,
-            status=TaskStatus.NEW
-        )
-        ml_task = mltask_service.create(task_create)
-
-        logger.info(f"Sending RPC request with message: {message}")
-        result = rpc_client.call(text=message)
-        logger.info(f"Received RPC response: {result}")
-
-        # Update task with result using service
-        mltask_service.set_result(ml_task.id, result)
-
-        return {"original": message, "processed": result}
-    except Exception as e:
-        logger.error(f"Unexpected error in RPC call: {str(e)}")
-        if ml_task:
-            mltask_service.set_status(ml_task.id, TaskStatus.FAILED)
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
-
-
-@ml_router.get("/tasks", response_model=List[MLTask])
-async def get_all_tasks(
-        mltask_service: MLTaskService = Depends(get_mltask_service)
+@ml_router.get(
+    "/history",
+    response_model=List[MLlogdata],
+    summary="Возвращает историю запросов к ML модели",
+)
+async def get_queries_history(
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+        user: User = Depends(access_token_user),
+        session=Depends(get_session),
 ):
-    """Get all ML tasks."""
-    return mltask_service.get_all()
-
-
-@ml_router.get("/tasks/{task_id}", response_model=MLTask)
-async def get_task(
-        task_id: int,
-        mltask_service: MLTaskService = Depends(get_mltask_service)
-):
-    """Get ML task by ID."""
-    task = mltask_service.get(task_id)
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
-    return task
+    query_log_handler = MLhistory(session)
+    return await query_log_handler.get_for_user(user, start_date, end_date)

@@ -1,6 +1,6 @@
-from rmq.rmqconf import RabbitMQConfig
-from rmq.rmqworker import MLWorker
-from rmq.rpcworker import RPCWorker
+from ml_worker.rmq.rmqconf import RabbitMQConfig
+from ml_worker.rmq.rmqworker import MLWorker
+from ml_worker.rmq.rpcworker import RPCWorker
 import sys
 import pika
 import time

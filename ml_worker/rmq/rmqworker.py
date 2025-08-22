@@ -1,5 +1,5 @@
-from rmq.rmqconf import RabbitMQConfig
-from llm import do_task
+from ml_worker.rmq.rmqconf import RabbitMQConfig
+from ml_worker.llm import do_task
 import pika
 import time
 import requests
