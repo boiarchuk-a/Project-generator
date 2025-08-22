@@ -1,20 +1,22 @@
-from dataclasses import dataclass
-from sqlmodel import SQLModel, Field, Relationship
-from typing import Optional, TYPE_CHECKING
 from datetime import datetime
+from decimal import Decimal
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-if TYPE_CHECKING:
-    from .User import User
+from app.models.base import Base
+from app.models.User import User
 
-# --- История транзакций ---
-class Transaction(SQLModel, table=True):
-    user: Optional["User"] = Relationship(back_populates="transactions")
-    id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id")
 
-    amount: float
-    result: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+class Transaction(Base):
+    """Класс, представляющий таблицу с данным о транзакциях (операции с транзакциями
+    и их валидацию необходимо выполнять посредством класса Balance)"""
 
-    def summary(self) -> str:
-        return f"[{self.timestamp.strftime('%Y-%m-%d %H:%M')}] User {self.user_id} → {self.result}"
+    __tablename__ = "transaction"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
+    timestamp: Mapped[datetime]
+    amount: Mapped[Decimal]  # Сумма транзакции (+ пополнение, - трата на услугу)
+    balance: Mapped[Decimal]  # Остаток на счету после выполнения транзакции
+
+    user: Mapped[User] = relationship(lazy="joined")

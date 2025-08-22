@@ -2,38 +2,149 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Text2Title - Генерация заголовков{% endblock %}</title>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <title>Мой аккаунт - Text2Title</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: #ecf0f1;
+        }
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .nav-left a {
+            color: #bdc3c7;
+            text-decoration: none;
+            margin-right: 15px;
+        }
+        .nav-left a:hover {
+            text-decoration: underline;
+            color: white;
+        }
+        .nav-right a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .container {
+            max-width: 500px;
+            margin: 30px auto;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+        input[readonly] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            color: #7f8c8d;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: #3498db;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        .error {
+            color: #e74c3c;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-logo">
-                <h1>Text2Title</h1>
-            </div>
-            <div class="nav-menu">
-                <a href="/" class="nav-link">Главная</a>
-                <a href="/view/prediction_history.html" class="nav-link">История</a>
-                <a href="/view/transaction_history.html" class="nav-link">Транзакции</a>
-                {% if user %}
-                    <a href="/logout" class="nav-link">Выйти</a>
-                {% else %}
-                    <a href="/view/login.html" class="nav-link">Войти</a>
-                    <a href="/view/signup.html" class="nav-link">Регистрация</a>
-                {% endif %}
-            </div>
+    <div class="header">
+        <div class="nav-left">
+            <a href="/view/balance.html">ТРАНЗАКЦИИ</a>
+            <a href="/view/ml.html">МОДЕЛЬ</a>
         </div>
-    </nav>
-
-    <main class="main-content">
-        {% block content %}{% endblock %}
-    </main>
-
-    <footer class="footer">
-        <div class="footer-content">
-            <p>&copy; 2024 Text2Title. Все права защищены.</p>
+        <div class="nav-right">
+            <a id="username-link" href="/page/me"></a>
         </div>
-    </footer>
+    </div>
+
+    <div class="container">
+        <h2 style="color: #2c3e50;">Учетная запись</h2>
+        <div class="form-group">
+            <label>Имя пользователя</label>
+            <input type="text" id="username" readonly>
+        </div>
+        <div class="form-group">
+            <label>Электронная почта</label>
+            <input type="text" id="email" readonly>
+        </div>
+        <div class="form-group">
+            <label>Полное имя</label>
+            <input type="text" id="fullname" readonly>
+        </div>
+        <button class="btn" id="logout-btn">Выйти</button>
+        <div class="error" id="error"></div>
+    </div>
+
+    <script>
+        async function loadUserData() {
+            try {
+                const response = await fetch('/user/me');
+                if (response.status === 403) {
+                    window.location.href = '/view/signin.html';
+                    return;
+                }
+                if (!response.ok) {
+                    throw new Error('Ошибка получения данных пользователя');
+                }
+                const data = await response.json();
+                document.getElementById('username').value = data.username || '';
+                document.getElementById('email').value = data.email || '';
+                document.getElementById('fullname').value = data.fullname || '';
+
+                const usernameLink = document.getElementById('username-link');
+                usernameLink.textContent = data.username || '';
+                usernameLink.href = '/view/base.html';
+            } catch (error) {
+                document.getElementById('error').textContent = error.message;
+            }
+        }
+
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/user/exit', { method: 'POST' });
+                if (response.ok) {
+                    window.location.href = '/view/signin.html';
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    document.getElementById('error').textContent = errorData.detail || 'Ошибка выхода';
+                }
+            } catch (error) {
+                document.getElementById('error').textContent = error.message;
+            }
+        });
+
+        loadUserData();
+    </script>
+
 </body>
 </html>

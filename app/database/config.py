@@ -10,12 +10,11 @@ class Settings(BaseSettings):
     DB_USER: Optional[str] = None  # Имя пользователя БД
     DB_PASS: Optional[str] = None  # Пароль пользователя БД
     DB_NAME: Optional[str] = None  # Название базы данных
-    COOKIE_NAME: Optional[str] = None  # Название cookie
-    SECRET_KEY: Optional[str] = None  # Секретный ключ
+    JWT_SECRET_KEY: Optional[str] = None
+    JWT_TOKEN_COOKIE_KEY: Optional[str] = None
 
     # Настройки приложения
     APP_NAME: Optional[str] = None  # Название приложения
-    APP_DESCRIPTION: Optional[str] = None  # Описание приложения
     DEBUG: Optional[bool] = None  # Режим отладки
     API_VERSION: Optional[str] = None  # Версия API
 

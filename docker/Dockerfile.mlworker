@@ -1,0 +1,6 @@
+FROM python:3.9-slim
+COPY ml_worker/requirements.txt /ProjectText2Title/ml_worker/
+RUN pip install -r /ProjectText2Title/ml_worker/requirements.txt
+ENV PYTHONPATH="${PYTHONPATH}:/ProjectText2Title"
+WORKDIR /ProjectText2Title
+CMD ["python", "ml_worker/main.py"]
