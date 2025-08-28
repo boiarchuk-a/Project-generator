@@ -210,7 +210,7 @@
 
     async function loadUserInfo() {
         try {
-            const resp = await fetch('/user/me');
+            const resp = await fetch('/user/base');
             if (resp.status === 403) {
                 window.location.href = '/view/signin.html';
                 return;
@@ -245,8 +245,8 @@
 
     async function executeQuery() {
         const queryText = document.getElementById('query-text').value.trim();
-        const errorDiv = document.getElementById('query-error');
-        errorDiv.textContent = '';
+            const errorDiv = document.getElementById('query-error');
+            errorDiv.textContent = '';
 
         if (!queryText) {
             errorDiv.textContent = 'Введите текст запроса';
@@ -255,7 +255,7 @@
 
         try {
             // Получаем цену запроса
-            const priceResp = await fetch(`/query/price?text=${encodeURIComponent(queryText)}`);
+            const priceResp = await fetch(`/ml/price?text=${encodeURIComponent(queryText)}`);
             if (priceResp.status === 403) {
                 window.location.href = '/view/signin.html';
                 return;
@@ -272,8 +272,14 @@
             if (!confirmed) return;
 
             // Выполняем запрос
-            const execResp = await fetch(`/query/execute?text=${encodeURIComponent(queryText)}`, {
-                method: 'POST'
+            const execResp = await fetch('/ml/generate-title', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+            abstract: queryText,
+            style: 'concise',
+            title_length: 'short'
+                })
             });
 
             if (execResp.status === 403) {
@@ -290,7 +296,7 @@
                 } catch (e) {
                     errorMessage = errorText || errorMessage;
                 }
-                errorDiv.textContent = errorMessage;
+                errorDiv.textContent = "Попробуйте позже";
                 return;
             }
 
@@ -307,7 +313,7 @@
             const start = document.getElementById('start-date').value;
             const end = document.getElementById('end-date').value;
 
-            let url = '/query/history';
+            let url = '/ml/history';
             const params = [];
             if (start) params.push(`start_date=${encodeURIComponent(start)}`);
             if (end) params.push(`end_date=${encodeURIComponent(end)}`);
@@ -348,7 +354,7 @@
         } catch (err) {
             document.getElementById('error').textContent = err.message;
             const tbody = document.querySelector('#query-table tbody');
-            tbody.innerHTML = '<tr><td colspan="6" class="error">Ошибка загрузки данных: ' + err.message + '</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="error">Ошибка загрузки данных: Попробуйте позже ' + '</td></tr>';
         }
     }
 

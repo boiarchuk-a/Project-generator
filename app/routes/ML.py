@@ -2,7 +2,6 @@ from datetime import date
 from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Optional
-import aiohttp
 import json
 import os
 
@@ -17,81 +16,64 @@ from app.Prediction import Prediction
 from app.shemas.Mllogdata import MLlogdata
 from app.shemas.Mllogupdatedata import MLlogupdatedata
 from app.Admin import Admin, UserNotFound
+from langchain.prompts.chat import ChatPromptTemplate
+from langchain_ollama.llms import OllamaLLM
+from app.vectordb import retriever
 
 ml_router = APIRouter()
 
 
-class OllamaClient:
-    def __init__(self):
-        # Используем host.docker.internal для доступа к хосту из контейнера
-        # или имя сервиса Ollama в Docker Compose
-        self.ollama_url = os.getenv("OLLAMA_URL", "http://host.docker.internal:11434")
-        self.model_name = os.getenv("OLLAMA_MODEL", "qwen2.5:7b-instruct")
-
-    async def generate_title(self, text: str) -> dict:
-        """Генерирует заголовок для текста используя Ollama"""
-        try:
-            prompt = f"""
-            Создай краткий и информативный заголовок для этого текста на русском языке.
-            Заголовок должен отражать основную суть текста и быть не длиннее 10 слов.
-
-            Текст: {text}
-
-            Заголовок:
-            """
-
-            data = {
-                "model": self.model_name,
-                "prompt": prompt,
-                "stream": False,
-                "options": {
-                    "temperature": 0.7,
-                    "max_tokens": 50,
-                }
-            }
-
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                        f"{self.ollama_url}/api/generate",
-                        json=data,
-                        timeout=30
-                ) as response:
-
-                    if response.status == 200:
-                        result = await response.json()
-                        title = result.get('response', '').strip()
-                        return {"title": title, "success": True}
-                    else:
-                        return {"error": f"Ollama API error: {response.status}", "success": False}
-
-        except Exception as e:
-            return {"error": str(e), "success": False}
 
 
-# Создаем клиент Ollama
-ollama_client = OllamaClient()
+@ml_router.post("/generate-title")
+def generate_title(req: MLlogdata):
+    # Импорты предполагаются выше:
+    # from langchain_core.prompts import ChatPromptTemplate
+    # from langchain_community.llms import Ollama as OllamaLLM
+    # (или ваша конкретная обёртка для OllamaLLM)
 
+    model = OllamaLLM(model="mistral:7b-instruct")
 
-@ml_router.post("/execute", summary="Отправляет запрос на исполнение")
-async def send_query_for_execution(
-        text: str,
-        user: User = Depends(access_token_user),
-        session=Depends(get_session)
-):
-    ml_worker_proxy = MLWorkerProxy(session)
+    # Чёткие placeholder'ы под передаваемые переменные:
+    template = """You are an expert in generating good titles for research papers.
+Generate a {style}, {title_length} title from the user's abstract.
+---
+context: {docs}
+---
+Here is the abstract from the user: {abstract}
+---
+Output ONLY the generated title and nothing else.
+Title: """
+
+    prompt = ChatPromptTemplate.from_template(template)
+    chain = prompt | model
+
+    # Безопасно получаем контекст
     try:
-        query = ML(text)
-        # Генерируем заголовок сразу при выполнении запроса
-        result = await ollama_client.generate_title(text)
-        if result["success"]:
-            # Создаем prediction с заголовком
-            prediction = Prediction(title=result["title"])
-            await ml_worker_proxy.send(user, query, prediction)
+        docs_obj = retriever.invoke(req.abstract)  # если retriever есть
+        # Нормализуем в строку
+        if isinstance(docs_obj, (list, tuple)):
+            docs = "\n\n".join(str(d) for d in docs_obj)
         else:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST,
-                                f"Ошибка генерации заголовка: {result.get('error', 'Unknown error')}")
-    except Exception as e:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+            docs = str(docs_obj)
+    except Exception:
+        docs = ""  # работаем и без ретривера
+
+    # <-- ВАЖНО: передаём ВСЕ переменные из шаблона
+    output = chain.invoke({
+        "docs": docs,
+        "abstract": req.abstract,
+        "style": getattr(req, "style", "concise"),
+        "title_length": getattr(req, "title_length", "short"),
+    })
+
+    title = str(output).strip()
+    # Если LLM вдруг вернул префикс 'Title:'
+    if "Title:" in title:
+        title = title.split("Title:", 1)[-1].strip()
+
+    return {"title": title}
+
 
 
 @ml_router.get("/price", summary="Возвращает стоимость выполнения запроса")
@@ -102,22 +84,6 @@ def get_query_price(
         return ML(text).price
     except IncorrectML as iq:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(iq))
-
-
-@ml_router.put(
-    "/update", summary="Служебный endpoint для получения данных от воркера"
-)
-async def update_querylog(query_log_update: MLlogupdatedata, session=Depends(get_session)):
-    ml_worker_proxy = MLWorkerProxy(session)
-    await ml_worker_proxy.recieve(
-        query_log_update.id,
-        MLstatus(query_log_update.status),
-        (
-            Prediction(**query_log_update.result_dict)
-            if query_log_update.result_dict
-            else None
-        ),
-    )
 
 
 @ml_router.get(
