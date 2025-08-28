@@ -14,7 +14,7 @@ app = FastAPI()
 
 app.include_router(balance_router, prefix="/balance")
 app.include_router(user_router, prefix="/user")
-app.include_router(ml_router, prefix="/query")
+app.include_router(ml_router, prefix="/ml")
 
 app.mount("/view", StaticFiles(directory="app/view"), name="view")
 

@@ -105,7 +105,7 @@ class MLhistory:
             select(Mllog)
             .filter(
                 Mllog.user_id == user.id,
-                Mllog.query_type == query_type,
+                Mllog.query_text == query_type,
                 Mllog.timestamp.between(start_date, end_datetime),
             )
             .order_by(Mllog.timestamp.desc())  # Сначала новые
@@ -141,7 +141,7 @@ class MLhistory:
             )
         )
 
-        result = await self.__session.execute(q)
+        result = self.__session.execute(q)
         queries = result.scalars().all()
 
         completed = [q for q in queries if q.status == MLstatus.COMPLETED]

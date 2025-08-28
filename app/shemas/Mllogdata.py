@@ -17,5 +17,7 @@ class MLlogdata(BaseModel):
     query_text: str
     status: int
     result_dict: Optional[Dict[str, float]]
-
+    abstract: str
+    title_length: str
+    style: str
     model_config = {"from_attributes": True}
